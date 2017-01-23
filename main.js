@@ -2,13 +2,47 @@ var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 canvas.addEventListener('click', action);
 
-var h = 0;
-var w = 0;
+var game = {
+  score: 0,
+  level: 1,
+  y: 1,
+  buffer: 50,
+  speed: 0.25,
+  yDirection:1,
+  gravity: 0.1,
 
-function easeOut(value) {
-  max = (3 * Math.PI) / 2;
-  min = Math.PI;
-  return  Math.sin(((max - min) * (value / h)) + Math.PI);
+};
+// Velocity x
+  
+  // Velocity y
+  //var vy = (Math.random() * -15) - 5;
+  
+  //var gravity = 0.1;
+
+  var W = canvas.width = window.innerWidth;
+  var H = canvas.height = window.innerHeight;
+
+/*
+  var stepSum = (H - W/12) - game.buffer;
+  var steps = 0;
+
+
+
+  for(var i = game.gravity; stepSum >= 0; i += game.gravity){
+      steps++;
+      stepSum -= i;
+    }
+
+  var vy = -(i);
+
+*/
+
+function resetGame(){
+  game.score = 0;
+  game.level = 1;
+  game.y = 1;
+  game.gravity = 0.1;
+  ball.vy = null;
 
 }
 
@@ -16,20 +50,13 @@ function easeOut(value) {
 
 function action(e) {
         e.preventDefault();
-  
-    if(( e.clientX >= ball.x - ball.radius && e.clientX <= ball.x + ball.radius ) 
-      && ( e.clientY >= ball.y - ball.radius && e.clientY <= ball.y + ball.radius )
-      && (ball.y >= game.y )
-      && (ball.yDirection >= 1)
-      ){
+    //if(( e.clientX >= ball.x - ball.radius && e.clientX <= ball.x + ball.radius ) && ( e.clientY >= ball.y - ball.radius && e.clientY <= ball.y + ball.radius ) && (ball.y >= game.y ) && (ball.yDirection >= 1)){
+      if(( e.clientX >= ball.x - ball.radius && e.clientX <= ball.x + ball.radius ) && ( e.clientY >= ball.y - ball.radius && e.clientY <= ball.y + ball.radius ) && (ball.y >= game.y ) && (ball.vy >= 0)){
           game.score ++;
-          ball.yDirection = -1;
-
-          //x direction could be more precise
-          if((ball.xDirection == -1) && (e.clientX >= (ball.x + 0.5 * ball.radius))){
-            ball.Direction = 1;
-          }else if((ball.xDirection == 1) && (e.clientX >= (ball.x - 0.5 * ball.radius))) {
-            ball.xDirection = -1;
+          ball.vy *= -1;
+          
+          if((e.clientX >= (ball.x + 0.5 * ball.radius)) || (e.clientX >= (ball.x - 0.5 * ball.radius))){
+            ball.vx *= -1;
           }
         }
 
@@ -54,70 +81,53 @@ function move(item){
   return;
 }
 
-function asteroid(radius, speed){
-  this.x = null;
-  this.y = null;
-  this.radius = radius;
-  this.speed = speed;
-  this.terminalVelocity = 1.8;
-  this.acceleration = 1;
-  this.yDirection = -1;
-  this.xDirection = 1;
-  this.move = function(){
-    //test x hit
-    if((this.xDirection <= 0 && this.x - this.radius <= 0) || (this.xDirection > 0 && this.x + this.radius >= w)){
-      this.xDirection = -(this.xDirection);
-    }
-    //test y top out
-    if(this.yDirection == -1 && this.acceleration <= 0.1){
-      this.yDirection = 1;
-    }
-    //going down at terminal velocity
-    if(this.yDirection == 1 && this.acceleration >= this.terminalVelocity){
-       this.x = this.x + this.xDirection;
-       this.y = this.y + (this.yDirection * this.acceleration);
-       return;
-    }
+function Ball(){
+  this.x = canvas.width / 2;
+  this.y = canvas.height - (canvas.width/10);
+  this.radius = canvas.width / 10;
+  this.vy = null;
+  this.vx = Math.random();
+  this.draw = function(ctx) {
+      ctx.fillStyle = 'blue';
+      ctx.beginPath();
+      
+      ctx.arc(
+        this.x,
+        this.y,
+        this.radius,
+        0,
+        Math.PI*2,
+        false
+      );
+      
+      ctx.closePath();
+      ctx.fill();
+    };
+    this.calculateVelocity = function(game){
+        var stepSum = (H - W/12) - game.buffer;
+        var steps = 0;
+        for(var i = game.gravity; stepSum >= 0; i += game.gravity){
+            steps++;
+            stepSum -= i;
+          }
+        this.vy = -(i);
+    };
+  }
 
-    if(this.yDirection == 1){
-      this.acceleration  = (this.y - game.topBuffer) / 30;
-    }else{
-      this.acceleration  = (this.y - game.topBuffer) / 40;
-    }
-    this.x = this.x + this.xDirection;
-    this.y = this.y + (this.yDirection * this.acceleration);
-    return;
-    
-  };
-}
+var ball = new Ball(20);
 
-var ball = new asteroid(20,1);
-
-
-var game = {
-  score: 0,
-  level: 1,
-  y: 1,
-  topBuffer: null,
-  speed: 0.25,
-  yDirection:1,
-  gravity: null
-
-};
 
 var start = null;
 
 var step = function( timestamp ) {
   if (!start) start = timestamp;
+  if(!ball.vy) ball.calculateVelocity(game);
   var progress = timestamp - start;
   
   // Stash Canvas Height/Width
   h = canvas.height;
   w = canvas.width;
-  if(!ball.y) ball.y = h * 0.8;
-  if(!ball.x) ball.x = w * 0.5;
   if(!game.topBuffer) game.topBuffer = h * 0.05;
-  if(!game.gravity) game.gravity = h / 12;
 
   // Clear the canvas
   ctx.clearRect(0, 0, w, h);
@@ -125,25 +135,43 @@ var step = function( timestamp ) {
   // Draw the background
   ctx.fillStyle = "#333333";
   ctx.fillRect(0, 0, w, h);
-  ctx.save();    
+  ctx.save();
   
   
    ctx.restore();
    ctx.fillStyle = "black";
    ctx.fillRect(0, game.y, w, h);
-   ctx.fillStyle = "orange";  
-   ctx.font = "30px Arial";   
+   ctx.fillStyle = "orange";
+   ctx.font = "30px Arial";
    ctx.fillText(game.score, 10, 30);
 
-   //ctx.fillText(ball.acceleration, 600, 10);
-   
 
-    // Move the ball
-    ball.move();
-    //move(ball);
+
+    ball.vy += game.gravity;
+    
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    if (
+        ball.x + ball.radius > canvas.width ||
+        ball.x - ball.radius < 0 ){
+      ball.vx *= -1;
+    }
+
+      if(
+        ball.y + ball.radius > canvas.height
+       ) {
+      //GAME OVER
+       alert("Game Over! Final Score: "+ game.score);
+      resetGame();
+    }
+    ball.draw(ctx);
+
     move(game);
   
   
+
+    /*
     if( ball.y > h ) {
       //ball.y = 90;
       ball.speed = 1;
@@ -158,12 +186,13 @@ var step = function( timestamp ) {
       //you lost
       //right now just "resets"
     }
+    */
   
   //end move ball
 
   
   // Draw the ball
-    ctx.beginPath();
+    /*ctx.beginPath();
     ctx.strokeStyle = '#0CF';
     ctx.arc(
       ball.x, 
@@ -171,7 +200,7 @@ var step = function( timestamp ) {
       ball.radius, 
       0, 
       2 * Math.PI);
-    ctx.stroke();
+    ctx.stroke();*/
   
   // Re-draw the Scene
   requestAnimationFrame(step);
