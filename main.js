@@ -5,27 +5,32 @@ canvas.addEventListener('click', action);
 var h = 0;
 var w = 0;
 
+function easeOut(value) {
+  max = (3 * Math.PI) / 2;
+  min = Math.PI;
+  return  Math.sin(((max - min) * (value / h)) + Math.PI);
+
+}
+
+
+
 function action(e) {
         e.preventDefault();
   
-    if(( e.clientX >= asteroid.x - asteroid.radius && e.clientX <= asteroid.x + asteroid.radius ) 
-      && ( e.clientY >= asteroid.y - asteroid.radius && e.clientY <= asteroid.y + asteroid.radius )
-      && (asteroid.y >= game.y )
-      && (asteroid.yDirection >= 1)
+    if(( e.clientX >= ball.x - ball.radius && e.clientX <= ball.x + ball.radius ) 
+      && ( e.clientY >= ball.y - ball.radius && e.clientY <= ball.y + ball.radius )
+      && (ball.y >= game.y )
+      && (ball.yDirection >= 1)
       ){
           game.score ++;
-          asteroid.yDirection = -1;
-          //randomize the direction a bit
-          var directionModifier = Math.random();
+          ball.yDirection = -1;
 
-          if(Math.random() >= 0.75){
-            asteroid.xDirection = asteroid.xDirection * -1;
+          //x direction could be more precise
+          if((ball.xDirection == -1) && (e.clientX >= (ball.x + 0.5 * ball.radius))){
+            ball.Direction = 1;
+          }else if((ball.xDirection == 1) && (e.clientX >= (ball.x - 0.5 * ball.radius))) {
+            ball.xDirection = -1;
           }
-            if(asteroid.xDirection >= 1){
-              asteroid.xDirection = directionModifier;
-            }else{
-              asteroid.xDirection = -(directionModifier);
-            }
         }
 
 
@@ -49,22 +54,54 @@ function move(item){
   return;
 }
 
-var asteroid = {
-  x: null,
-  y: null,
-  radius: 20,
-  hp: 1,
-  speed: 1,
-  acceleration: 0.0035,
-  yDirection: -1,
-  xDirection: 1
-};
+function asteroid(radius, speed){
+  this.x = null;
+  this.y = null;
+  this.radius = radius;
+  this.speed = speed;
+  this.terminalVelocity = 1.8;
+  this.acceleration = 1;
+  this.yDirection = -1;
+  this.xDirection = 1;
+  this.move = function(){
+    //test x hit
+    if((this.xDirection <= 0 && this.x - this.radius <= 0) || (this.xDirection > 0 && this.x + this.radius >= w)){
+      this.xDirection = -(this.xDirection);
+    }
+    //test y top out
+    if(this.yDirection == -1 && this.acceleration <= 0.1){
+      this.yDirection = 1;
+    }
+    //going down at terminal velocity
+    if(this.yDirection == 1 && this.acceleration >= this.terminalVelocity){
+       this.x = this.x + this.xDirection;
+       this.y = this.y + (this.yDirection * this.acceleration);
+       return;
+    }
+
+    if(this.yDirection == 1){
+      this.acceleration  = (this.y - game.topBuffer) / 30;
+    }else{
+      this.acceleration  = (this.y - game.topBuffer) / 40;
+    }
+    this.x = this.x + this.xDirection;
+    this.y = this.y + (this.yDirection * this.acceleration);
+    return;
+    
+  };
+}
+
+var ball = new asteroid(20,1);
+
 
 var game = {
   score: 0,
+  level: 1,
   y: 1,
-  speed: 0.05,
-  yDirection:1
+  topBuffer: null,
+  speed: 0.25,
+  yDirection:1,
+  gravity: null
 
 };
 
@@ -77,50 +114,61 @@ var step = function( timestamp ) {
   // Stash Canvas Height/Width
   h = canvas.height;
   w = canvas.width;
-  if(!asteroid.y) asteroid.y = h * 0.8;
-  if(!asteroid.x) asteroid.x = w * 0.5;
+  if(!ball.y) ball.y = h * 0.8;
+  if(!ball.x) ball.x = w * 0.5;
+  if(!game.topBuffer) game.topBuffer = h * 0.05;
+  if(!game.gravity) game.gravity = h / 12;
 
   // Clear the canvas
   ctx.clearRect(0, 0, w, h);
   
   // Draw the background
-  ctx.fillStyle = "#1a1a1a";
+  ctx.fillStyle = "#333333";
   ctx.fillRect(0, 0, w, h);
   ctx.save();    
   
   
    ctx.restore();
-   ctx.fillStyle = "green";
+   ctx.fillStyle = "black";
    ctx.fillRect(0, game.y, w, h);
-   ctx.fillStyle = "orange";     
-   ctx.fillText(game.score, 10, 10);
+   ctx.fillStyle = "orange";  
+   ctx.font = "30px Arial";   
+   ctx.fillText(game.score, 10, 30);
+
+   //ctx.fillText(ball.acceleration, 600, 10);
    
 
-    // Move the Asteroid
-    //asteriod.move;
-    move(asteroid);
+    // Move the ball
+    ball.move();
+    //move(ball);
     move(game);
   
   
-    if( asteroid.y > h ) {
-      //asteroid.y = 90;
-      asteroid.speed = 0;
+    if( ball.y > h ) {
+      //ball.y = 90;
+      ball.speed = 1;
+      ball.x = null;
+      ball.y = null;
+      ball.acceleration = 1;
+      ball.yDirection = -1;
       alert("Game Over! Final Score: "+ game.score);
-      return;
+      game.score = 0;
+      game.y = 1;
+      //return;
       //you lost
       //right now just "resets"
     }
   
-  //end move asteroid
+  //end move ball
 
   
-  // Draw the Asteroid
+  // Draw the ball
     ctx.beginPath();
     ctx.strokeStyle = '#0CF';
     ctx.arc(
-      asteroid.x, 
-      asteroid.y, 
-      asteroid.radius, 
+      ball.x, 
+      ball.y, 
+      ball.radius, 
       0, 
       2 * Math.PI);
     ctx.stroke();
