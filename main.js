@@ -12,30 +12,10 @@ var game = {
   gravity: 0.1,
 
 };
-// Velocity x
-  
-  // Velocity y
-  //var vy = (Math.random() * -15) - 5;
-  
-  //var gravity = 0.1;
 
-  var W = canvas.width = window.innerWidth;
-  var H = canvas.height = window.innerHeight;
+var W = canvas.width = window.innerWidth;
+var H = canvas.height = window.innerHeight;
 
-/*
-  var stepSum = (H - W/12) - game.buffer;
-  var steps = 0;
-
-
-
-  for(var i = game.gravity; stepSum >= 0; i += game.gravity){
-      steps++;
-      stepSum -= i;
-    }
-
-  var vy = -(i);
-
-*/
 
 function resetGame(){
   game.score = 0;
@@ -125,22 +105,22 @@ var step = function( timestamp ) {
   var progress = timestamp - start;
   
   // Stash Canvas Height/Width
-  h = canvas.height;
-  w = canvas.width;
-  if(!game.topBuffer) game.topBuffer = h * 0.05;
+  H = canvas.height;
+  W = canvas.width;
+  if(!game.topBuffer) game.topBuffer = H * 0.05;
 
   // Clear the canvas
-  ctx.clearRect(0, 0, w, h);
+  ctx.clearRect(0, 0, W, H);
   
   // Draw the background
   ctx.fillStyle = "#333333";
-  ctx.fillRect(0, 0, w, h);
+  ctx.fillRect(0, 0, W, H);
   ctx.save();
   
   
    ctx.restore();
    ctx.fillStyle = "black";
-   ctx.fillRect(0, game.y, w, h);
+   ctx.fillRect(0, game.y, W, H);
    ctx.fillStyle = "orange";
    ctx.font = "30px Arial";
    ctx.fillText(game.score, 10, 30);
@@ -168,39 +148,7 @@ var step = function( timestamp ) {
     ball.draw(ctx);
 
     move(game);
-  
-  
 
-    /*
-    if( ball.y > h ) {
-      //ball.y = 90;
-      ball.speed = 1;
-      ball.x = null;
-      ball.y = null;
-      ball.acceleration = 1;
-      ball.yDirection = -1;
-      alert("Game Over! Final Score: "+ game.score);
-      game.score = 0;
-      game.y = 1;
-      //return;
-      //you lost
-      //right now just "resets"
-    }
-    */
-  
-  //end move ball
-
-  
-  // Draw the ball
-    /*ctx.beginPath();
-    ctx.strokeStyle = '#0CF';
-    ctx.arc(
-      ball.x, 
-      ball.y, 
-      ball.radius, 
-      0, 
-      2 * Math.PI);
-    ctx.stroke();*/
   
   // Re-draw the Scene
   requestAnimationFrame(step);
