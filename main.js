@@ -140,7 +140,7 @@ function action(e){
 
     var allLength = allData.length;
     for(var i = 0; i < allLength; i+= 4){
-      console.log(""+allData[i]+allData[i+1]+allData[i+2]);
+      //R+G+B compare
       if((""+allData[i]+allData[i+1]+allData[i+2] == '255255255')|| (""+allData[i]+allData[i+1]+allData[i+2] == '244157203')||(""+allData[i]+allData[i+1]+allData[i+2] == '2048297')){
           hitBall = true;
           break;
