@@ -20,8 +20,8 @@ var H = canvas.height = window.innerHeight;
 
 function Ball(){
   this.x = canvas.width / 2;
-  this.y = canvas.height - (canvas.width/5);
-  this.radius = canvas.width / 5;
+  this.y = canvas.height - (canvas.width/4);
+  this.radius = canvas.width / 4;
   this.vy = null;
   this.imageUp = new Image();
   this.imageUp.src = 'pigUp.svg';
@@ -53,7 +53,7 @@ function Clouds(){
         this.group.push( {
           x: Math.floor(Math.random()* canvas.width),
           y: 0,
-          w: canvas.width/4,
+          w: canvas.width/3,
           h: canvas.height/8,
           d: Math.random()
         });
@@ -95,6 +95,7 @@ function resetGame(){
   game.gravity = 0.1;
   ball.vy = null;
   document.getElementById('score').innerHTML = '0';
+  document.body.style.background = '#66ccff';
 
 }
 
@@ -128,21 +129,25 @@ function rgbToHex(r, g, b) {
 
 function action(e){
     var eventLocation = getEventLocation(this,e);
+    var hitBall = false;
     //var coord = "x=" + eventLocation.x + ", y=" + eventLocation.y;
     
     // Get the data of the pixel according to the location generate by the getEventLocation function
     var context = this.getContext('2d');
-    var pixelData = context.getImageData(eventLocation.x, eventLocation.y, 1, 1).data;
+    //var pixelData = context.getImageData(eventLocation.x, eventLocation.y,1, 1).data;
 
-    // If transparency on the image
-    if((pixelData[0] === 0) && (pixelData[1] === 0) && (pixelData[2] === 0) && (pixelData[3] === 0)){
-        //coord += " (Transparent color detected, cannot be converted to HEX)";
+    var allData = context.getImageData(eventLocation.x - 10, eventLocation.y -10 ,20, 20).data;
+
+    var allLength = allData.length;
+    for(var i = 0; i < allLength; i+= 4){
+      console.log(""+allData[i]+allData[i+1]+allData[i+2]);
+      if((""+allData[i]+allData[i+1]+allData[i+2] == '255255255')|| (""+allData[i]+allData[i+1]+allData[i+2] == '244157203')||(""+allData[i]+allData[i+1]+allData[i+2] == '2048297')){
+          hitBall = true;
+          break;
+        }
     }
-    
-    var hex = "#" + ("000000" + rgbToHex(pixelData[0], pixelData[1], pixelData[2])).slice(-6);
-    
-    // hit based on color
-    if((hex == "#FFFFFF"  && ball.vy >= 0)||(hex == "#f49dcb"  && ball.vy >= 0)||(hex == "#cc5261"  && ball.vy >= 0)){
+
+    if(hitBall){
             game.score ++;
             ball.vy *= -1;
             if(eventLocation.x >= (ball.x + 0.5 * ball.radius) && ball.vx >= 0){
@@ -155,6 +160,7 @@ function action(e){
             if(game.score === 5){
                document.body.style.background = '#40a2d3';
             }
+            return;
     }
 }
 
