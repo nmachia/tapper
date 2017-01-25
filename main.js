@@ -2,6 +2,8 @@ var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 canvas.addEventListener('click', action);
 
+var scoreTable = document.getElementById('score');
+
 var start = null;
 var game = {
   score: 0,
@@ -18,14 +20,20 @@ var H = canvas.height = window.innerHeight;
 
 function Ball(){
   this.x = canvas.width / 2;
-  this.y = canvas.height - (canvas.width/10);
-  this.radius = canvas.width / 10;
+  this.y = canvas.height - (canvas.width/5);
+  this.radius = canvas.width / 5;
   this.vy = null;
-  this.image = new Image();
-  this.image.src = 'pig.svg';
+  this.imageUp = new Image();
+  this.imageUp.src = 'pigUp.svg';
+  this.imageDown = new Image();
+  this.imageDown.src = 'pig.svg';
   this.vx = Math.random();
   this.draw = function(ctx) {
-      ctx.drawImage(this.image, this.x, this.y, this.radius, this.radius);
+      if(this.vy > 0){
+        ctx.drawImage(this.imageDown, this.x, this.y, this.radius, this.radius);
+      }else{
+        ctx.drawImage(this.imageUp, this.x, this.y, this.radius, this.radius);
+      }
     };
     this.calculateVelocity = function(game){
         var stepSum = (H - W/10) - game.buffer;
@@ -65,10 +73,10 @@ function Clouds(){
     for(var i = 0; i< this.group.length; i++ ) {
       var item = this.group[i];
 
-      ctx.fillStyle = 'white';
+      ctx.fillStyle = '#EEEEEE';
       ctx.fillRect(item.x + item.w * 0.1, item.y - item.h, item.w * 0.8, item.h * 0.4);
       ctx.fillRect(item.x, item.y - item.h * 0.65, item.w, item.h *0.5);
-      ctx.fillStyle = 'gray';
+      ctx.fillStyle = '#999999';
       ctx.fillRect(item.x, item.y - item.h * 0.15, item.w, item.h * 0.1);
 
 
@@ -86,6 +94,7 @@ function resetGame(){
   game.level = 1;
   game.gravity = 0.1;
   ball.vy = null;
+  document.getElementById('score').innerHTML = '0';
 
 }
 
@@ -133,13 +142,18 @@ function action(e){
     var hex = "#" + ("000000" + rgbToHex(pixelData[0], pixelData[1], pixelData[2])).slice(-6);
     
     // hit based on color
-    if(hex == "#2a3eff"  && ball.vy >= 0){
+    if((hex == "#FFFFFF"  && ball.vy >= 0)||(hex == "#f49dcb"  && ball.vy >= 0)||(hex == "#cc5261"  && ball.vy >= 0)){
             game.score ++;
             ball.vy *= -1;
             if(eventLocation.x >= (ball.x + 0.5 * ball.radius) && ball.vx >= 0){
               ball.vx *= -1;
             }else if(eventLocation.x <= (ball.x - 0.5 * ball.radius) && ball.vx <= 0){
               ball.vx *= -1;
+            }
+            document.getElementById('score').innerHTML = game.score;
+            //transition background (needs work)
+            if(game.score === 5){
+               document.body.style.background = '#40a2d3';
             }
     }
 }
@@ -157,12 +171,6 @@ var step = function( timestamp ) {
 
   // Clear the canvas
   ctx.clearRect(0, 0, W, H);
-
-
-   ctx.fillStyle = "orange";
-   ctx.font = "30px Arial";
-   ctx.fillText(game.score, 10, 30);
-
 
 
     ball.vy += game.gravity;
