@@ -19,24 +19,26 @@ var W = canvas.width = window.innerWidth;
 var H = canvas.height = window.innerHeight;
 
 function Ball(){
-  this.x = canvas.width / 2;
-  this.y = canvas.height - (canvas.width/4);
   this.radius = canvas.width / 4;
+  this.x = canvas.width / 2;
+  this.y = canvas.height - this.radius;
   this.vy = null;
   this.imageUp = new Image();
   this.imageUp.src = 'pigUp.svg';
   this.imageDown = new Image();
   this.imageDown.src = 'pig.svg';
-  this.vx = Math.random();
+  this.minSpeed = 0;
+  this.maxSpeed = 2;
+  this.vx = Math.random(this.minSpeed, this.maxSpeed);
   this.draw = function(ctx) {
       if(this.vy > 0){
-        ctx.drawImage(this.imageDown, this.x, this.y, this.radius, this.radius);
+        ctx.drawImage(this.imageDown, this.x-this.radius/2, this.y, this.radius, this.radius);
       }else{
-        ctx.drawImage(this.imageUp, this.x, this.y, this.radius, this.radius);
+        ctx.drawImage(this.imageUp, this.x-this.radius/2, this.y, this.radius, this.radius);
       }
     };
     this.calculateVelocity = function(game){
-        var stepSum = (H - W/10) - game.buffer;
+        var stepSum = (this.y) - game.buffer;
         for(var i = game.gravity; stepSum >= 0; i += game.gravity){
             stepSum -= i;
           }
@@ -54,6 +56,7 @@ function Clouds(){
           x: Math.floor(Math.random()* canvas.width),
           y: 0,
           w: canvas.width/3,
+          r: canvas.width/9,
           h: canvas.height/8,
           d: Math.random()
         });
@@ -64,7 +67,7 @@ function Clouds(){
       var item = this.group[i];
       item.y += 1;
       
-      if( item.y - item.h > H ) {
+      if( item.y - (item.r * 2) > H ) {
         this.group.splice(i, 1);
       }
     }
@@ -73,15 +76,12 @@ function Clouds(){
     for(var i = 0; i< this.group.length; i++ ) {
       var item = this.group[i];
 
+      ctx.beginPath();
+      ctx.arc(item.x, item.y-item.r, item.r, 0, 2 * Math.PI, false);
+      ctx.arc(item.x-item.r, item.y-item.r, item.r/1.3, 0, 2 * Math.PI, false);
+      ctx.arc(item.x+item.r, item.y-item.r, item.r/1.4, 0, 2 * Math.PI, false);
       ctx.fillStyle = '#EEEEEE';
-      ctx.fillRect(item.x + item.w * 0.1, item.y - item.h, item.w * 0.8, item.h * 0.4);
-      ctx.fillRect(item.x, item.y - item.h * 0.65, item.w, item.h *0.5);
-      ctx.fillStyle = '#999999';
-      ctx.fillRect(item.x, item.y - item.h * 0.15, item.w, item.h * 0.1);
-
-
-      //ctx.fillRect(item.x-20, item.y+20, 140,40);
-
+      ctx.fill();
     }
   };
 }
@@ -90,10 +90,15 @@ var clouds = new Clouds();
 
 
 function resetGame(){
+  ctx.clearRect(0, 0, W, H);
   game.score = 0;
   game.level = 1;
   game.gravity = 0.1;
   ball.vy = null;
+  ball.x = canvas.width / 2;
+  ball.y = canvas.height - ball.radius;
+  clouds.group.length = 0;
+  ball.draw(ctx);
   document.getElementById('score').innerHTML = '0';
   document.body.style.background = '#66ccff';
 
@@ -141,19 +146,23 @@ function action(e){
     var allLength = allData.length;
     for(var i = 0; i < allLength; i+= 4){
       //R+G+B compare
-      if((""+allData[i]+allData[i+1]+allData[i+2] == '255255255')|| (""+allData[i]+allData[i+1]+allData[i+2] == '244157203')||(""+allData[i]+allData[i+1]+allData[i+2] == '2048297')){
+      if((""+allData[i]+allData[i+1]+allData[i+2] == '255255255')|| (""+allData[i]+allData[i+1]+allData[i+2] == '232158171')||(""+allData[i]+allData[i+1]+allData[i+2] == '181100118')||(""+allData[i]+allData[i+1]+allData[i+2] == '515151')){
           hitBall = true;
           break;
         }
     }
 
     if(hitBall){
+            if(!ball.vy){
+              window.requestAnimationFrame(step);
+              return;
+            }
             game.score ++;
             ball.vy *= -1;
-            if(eventLocation.x >= (ball.x + 0.5 * ball.radius) && ball.vx >= 0){
-              ball.vx *= -1;
-            }else if(eventLocation.x <= (ball.x - 0.5 * ball.radius) && ball.vx <= 0){
-              ball.vx *= -1;
+            if(eventLocation.x >= (ball.x + 0.2 * ball.radius) && ball.vx >= 0){
+              ball.vx = -(Math.random(this.maxSpeed/2,this.maxSpeed));
+            }else if(eventLocation.x <= (ball.x - 0.2 * ball.radius) && ball.vx <= 0){
+              ball.vx = (Math.random(this.maxSpeed/2,this.maxSpeed));
             }
             document.getElementById('score').innerHTML = game.score;
             //transition background (needs work)
@@ -178,24 +187,25 @@ var step = function( timestamp ) {
   // Clear the canvas
   ctx.clearRect(0, 0, W, H);
 
-
-    ball.vy += game.gravity;
     
+    ball.vy += game.gravity;
     ball.x += ball.vx;
     ball.y += ball.vy;
 
+
     if (
-        ball.x + ball.radius > canvas.width ||
-        ball.x  < 0 ){
+        ball.x + ball.radius/2 > canvas.width ||
+        ball.x-ball.radius/2  < 0 ){
       ball.vx *= -1;
     }
 
       if(
-        ball.y + ball.radius > canvas.height
+        ball.y - ball.radius > canvas.height
        ) {
       //GAME OVER
        alert("Game Over! Final Score: "+ game.score);
-      resetGame();
+       resetGame();
+       return;
     }
 
 
