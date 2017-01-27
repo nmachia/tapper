@@ -1,10 +1,7 @@
 var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 canvas.addEventListener('click', action);
-
-var scoreTable = document.getElementById('score');
-
-var start = null;
+var clickDisabled = false;
 var game = {
   score: 0,
   level: 1,
@@ -12,17 +9,24 @@ var game = {
   speed: 0.25,
   yDirection:1,
   gravity: 0.1,
-
+  backgrounds: ['#66ccff', '#5cb7e5', '#52a3cc', '#478eb2', '#3d7a99'],
+  backgroundi: 1
 };
+document.body.style.background = game.backgrounds[0];
+
+var start = null;
+
 
 var W = canvas.width = window.innerWidth;
 var H = canvas.height = window.innerHeight;
 
 function Ball(){
-  this.radius = canvas.width / 4;
-  this.x = canvas.width / 2;
-  this.y = canvas.height - this.radius;
+  this.radius = W / 4;
+  this.x = W / 2;
+  this.y = H - this.radius;
   this.vy = null;
+  this.sprite = 0;
+  this.spriteSwitch = false;
   this.imageUp = new Image();
   this.imageUp.src = 'pigUp.svg';
   this.imageDown = new Image();
@@ -31,10 +35,23 @@ function Ball(){
   this.maxSpeed = 2;
   this.vx = Math.random(this.minSpeed, this.maxSpeed);
   this.draw = function(ctx) {
-      if(this.vy > 0){
+      if(this.vy > 0 && this.sprite % 16 <= 8){
         ctx.drawImage(this.imageDown, this.x-this.radius/2, this.y, this.radius, this.radius);
+        //console.log('draw1');
       }else{
-        ctx.drawImage(this.imageUp, this.x-this.radius/2, this.y, this.radius, this.radius);
+         if(this.sprite % 16 === 0){
+            this.spriteSwitch ^= true;
+          }
+        if(this.spriteSwitch){
+          ctx.drawImage(this.imageUp, this.x-this.radius/2, this.y, this.radius, this.radius);
+          //console.log('draw2');
+          
+        }else{
+          ctx.drawImage(this.imageDown, this.x-this.radius/2, this.y, this.radius, this.radius);
+          //console.log('draw3');
+        }
+        this.sprite++;
+
       }
     };
     this.calculateVelocity = function(game){
@@ -89,7 +106,7 @@ function Clouds(){
 var clouds = new Clouds();
 
 
-function resetGame(){
+var resetGame = function(){
   ctx.clearRect(0, 0, W, H);
   game.score = 0;
   game.level = 1;
@@ -99,10 +116,9 @@ function resetGame(){
   ball.y = canvas.height - ball.radius;
   clouds.group.length = 0;
   ball.draw(ctx);
-  document.getElementById('score').innerHTML = '0';
-  document.body.style.background = '#66ccff';
-
-}
+  document.getElementById('score').innerHTML = game.score;
+  document.body.style.background = game.backgrounds[0];
+};
 
 ////hit detection
 function getElementPosition(obj) {
@@ -126,21 +142,13 @@ function getEventLocation(element,event){
     };
 }
 
-function rgbToHex(r, g, b) {
-    if (r > 255 || g > 255 || b > 255)
-        throw "Invalid color component";
-    return ((r << 16) | (g << 8) | b).toString(16);
-}
-
 function action(e){
+    if(clickDisabled){return;}
     var eventLocation = getEventLocation(this,e);
     var hitBall = false;
-    //var coord = "x=" + eventLocation.x + ", y=" + eventLocation.y;
     
     // Get the data of the pixel according to the location generate by the getEventLocation function
     var context = this.getContext('2d');
-    //var pixelData = context.getImageData(eventLocation.x, eventLocation.y,1, 1).data;
-
     var allData = context.getImageData(eventLocation.x - 10, eventLocation.y -10 ,20, 20).data;
 
     var allLength = allData.length;
@@ -153,10 +161,15 @@ function action(e){
     }
 
     if(hitBall){
+            //if youre resting on the ground
             if(!ball.vy){
               window.requestAnimationFrame(step);
+                //can only click every 750ms
+                clickDisabled = true;
+                setTimeout(function(){clickDisabled = false;},750);
               return;
             }
+            //otherwise its an in-game hit
             game.score ++;
             ball.vy *= -1;
             if(eventLocation.x >= (ball.x + 0.2 * ball.radius) && ball.vx >= 0){
@@ -165,10 +178,17 @@ function action(e){
               ball.vx = (Math.random(this.maxSpeed/2,this.maxSpeed));
             }
             document.getElementById('score').innerHTML = game.score;
-            //transition background (needs work)
-            if(game.score === 5){
-               document.body.style.background = '#40a2d3';
+            //transition background every 10 hits (needs work)
+            if(game.score % 10 === 0){
+               document.body.style.background = game.backgrounds[game.backgroundi];
+               game.backgroundi++;
+               if(game.backgroundi >= game.backgrounds.length){
+                game.backgroundi = 0;
+               }
             }
+            //can only click every 750ms
+            clickDisabled = true;
+            setTimeout(function(){clickDisabled = false;}, 750);
             return;
     }
 }
@@ -179,12 +199,6 @@ var step = function( timestamp ) {
   if(!ball.vy) ball.calculateVelocity(game);
   var progress = timestamp - start;
   
-  // Stash Canvas Height/Width
-  H = canvas.height;
-  W = canvas.width;
-  if(!game.topBuffer) game.topBuffer = H * 0.05;
-
-  // Clear the canvas
   ctx.clearRect(0, 0, W, H);
 
     
@@ -192,17 +206,17 @@ var step = function( timestamp ) {
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-
+    //change x direction if you hit a wall
     if (
         ball.x + ball.radius/2 > canvas.width ||
         ball.x-ball.radius/2  < 0 ){
       ball.vx *= -1;
     }
 
-      if(
+    //game over if you drop off screen
+    if(
         ball.y - ball.radius > canvas.height
        ) {
-      //GAME OVER
        alert("Game Over! Final Score: "+ game.score);
        resetGame();
        return;
@@ -227,9 +241,9 @@ var setCanvasSize = function() {
 };
 
 
-
 setCanvasSize();
 window.addEventListener('resize', setCanvasSize );
-
 // Start the animation
 window.requestAnimationFrame(step);
+//resetGame();
+
