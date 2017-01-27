@@ -119,7 +119,7 @@ var clouds = new Clouds();
 var resetGame = function(){
   ctx.clearRect(0, 0, W, H);
   document.getElementById('notification').style.display = "block";
-  document.getElementById('your-score').innerHTML = game.score;
+  document.getElementById('your-score').innerHTML = "FINAL SCORE: " + game.score;
   game.score = 0;
   game.level = 1;
   game.gravity = 0.1;
