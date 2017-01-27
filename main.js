@@ -1,3 +1,13 @@
+//pregame stuff
+var startBox = document.getElementById('start');
+startBox.addEventListener('click',startAction);
+function startAction(e){
+  requestAnimationFrame(step);
+  document.getElementById('notification').style.display = "none";
+  return false;
+}
+
+//game stuff
 var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 canvas.addEventListener('click', action);
@@ -108,6 +118,8 @@ var clouds = new Clouds();
 
 var resetGame = function(){
   ctx.clearRect(0, 0, W, H);
+  document.getElementById('notification').style.display = "block";
+  document.getElementById('your-score').innerHTML = game.score;
   game.score = 0;
   game.level = 1;
   game.gravity = 0.1;
@@ -217,7 +229,6 @@ var step = function( timestamp ) {
     if(
         ball.y - ball.radius > canvas.height
        ) {
-       alert("Game Over! Final Score: "+ game.score);
        resetGame();
        return;
     }
@@ -244,6 +255,6 @@ var setCanvasSize = function() {
 setCanvasSize();
 window.addEventListener('resize', setCanvasSize );
 // Start the animation
-window.requestAnimationFrame(step);
+//window.requestAnimationFrame(step);
 //resetGame();
 

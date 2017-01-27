@@ -11,7 +11,7 @@ body {
   background: #66ccff;
   transition: background-color 0.9s ease;
 }
-#canvas{display: block;}
+#canvas{display: block; position: relative; z-index: 5;}
 #score{
 	display: block;
 	position: absolute;
@@ -36,5 +36,21 @@ body {
                0 5px 10px rgba(0,0,0,.25),
                0 10px 10px rgba(0,0,0,.2),
                0 20px 20px rgba(0,0,0,.15);
-
 }
+#notification{
+  display: block;
+  position: absolute;
+  top:20%;
+  width:80%;
+  left:10%;
+  background:#000;
+  z-index: 101;
+  text-align: center;
+}
+  #notification #your-score{
+    color:#fff;
+  }
+  #notification a{
+    color:#c33;
+    padding:20px 0;
+  }
